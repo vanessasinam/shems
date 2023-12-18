@@ -4,6 +4,21 @@ from django.urls import reverse
 from django.db import connection
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from datetime import datetime
+# Create your views here.
+
+monthToName = {1: 'January',
+                2: 'February',
+                3: 'March',
+                4: 'April',
+                5: 'May',
+                6: 'June',
+                7: 'July',
+                8: 'August',
+                9: 'September',
+                10: 'October',
+                11: 'November',
+                12: 'December'}
 
 from .models import (
     Customer,
@@ -171,3 +186,127 @@ def home(request):
         return redirect("shemsWebapp:profile")
     else:
         return redirect("shemsAccount:login")
+
+
+'''
+Gets the daily energy usage of a particular device for a period of time
+'''
+def getDeviceDailyEnergyUsage(cid):
+
+    with connection.cursor() as cursor:
+        #device energy consumption by day 
+        cursor.execute(f"SELECT DATE_TRUNC('DAY', timestamp) as time, did, SUM(value)"
+                       + f" FROM customerLocation NATURAL JOIN device NATURAL JOIN data"
+                       +  f" WHERE cid = {cid} AND label = 'energy use'"
+                       + " GROUP BY DATE_TRUNC('DAY', timestamp), did"
+                       + " ORDER BY DATE_TRUNC('DAY', timestamp), did")
+        
+        deviceDailyEnergyUse= {}
+
+        for d in cursor.fetchall():
+            if d[1] not in deviceDailyEnergyUse.keys():
+                deviceDailyEnergyUse[d[1]] = {'time_labels' : [d[0].strftime('%m-%d-%Y')],
+                'values' : [float(d[2])]}
+            else:
+                deviceDailyEnergyUse[d[1]]['time_labels'].append(d[0].strftime('%m-%d-%Y'))
+                deviceDailyEnergyUse[d[1]]['values'].append(float(d[2]))
+
+    return deviceDailyEnergyUse
+
+'''
+Gets the energy usage of different device types 
+at a particular location for the current month
+'''
+def getDeviceTypeEnergyUsage(cid, year, month):
+    with connection.cursor() as cursor: 
+        cursor.execute(f"SELECT lid, model_type, SUM(value)"
+                       + " FROM customerLocation NATURAL JOIN device NATURAL JOIN model NATURAL JOIN data"
+                       + f" WHERE cid = {cid} AND label = 'energy use'"
+                       + f" AND EXTRACT(MONTH FROM data.timestamp) = {month}"
+                       + f" AND EXTRACT(YEAR FROM data.timestamp) = {year}"
+                       + " GROUP BY lid, model_type")
+        locations = {} 
+        for row in cursor.fetchall():
+            if row[0] not in locations.keys():
+                locations[row[0]] = {'model_type': [row[1]], 'energy_use':[float(row[2])]}
+            else:
+                locations[row[0]]['model_type'].append(row[1])
+                locations[row[0]]['energy_use'].append(float(row[2]))
+
+    return locations
+
+
+'''
+Gets the energy prices of the customer's service locations
+'''
+def getEnergyPrice(cid, year, month):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT EXTRACT(HOUR FROM date_time), EnergyPrice.zipcode, AVG(price_per_hr)"
+                       + " FROM (CustomerLocation NATURAL JOIN Location)" 
+                       + " JOIN EnergyPrice ON Location.zipcode = EnergyPrice.zipcode"
+                       + f" WHERE cid = {cid} AND EXTRACT(MONTH FROM date_time) = {month}"
+                       + f" AND EXTRACT(YEAR FROM date_time) = {year}"
+                       + " GROUP BY EXTRACT(HOUR FROM date_time), EnergyPrice.zipcode"
+                       + " ORDER BY EXTRACT(HOUR FROM date_time)")
+        zipcodes = {}
+        for row in cursor.fetchall():
+            if row[1] not in zipcodes.keys():
+                print(row[0])
+                zipcodes[row[1]] = {'date': [int(row[0])], 
+                                    'price': [float(row[2])]}
+            else:
+                zipcodes[row[1]]['date'].append(int(row[0]))
+                zipcodes[row[1]]['price'].append(float(row[2]))
+    return zipcodes
+
+
+'''
+Gets the total energy usage each month this year by location
+'''
+def getTotalEnergyUsageByLocation(cid, year, month):
+    with connection.cursor() as cursor: 
+        cursor.execute(f"SELECT lid, EXTRACT(MONTH FROM data.timestamp) as month, SUM(value)"
+                       + " FROM customerLocation NATURAL JOIN device NATURAL JOIN data"
+                       + f" WHERE cid = {cid} AND label = 'energy use'"
+                       + f" AND EXTRACT(YEAR FROM data.timestamp) = {year}"
+                       + " GROUP BY lid, EXTRACT(MONTH FROM data.timestamp)"
+                       + " ORDER BY EXTRACT(MONTH from data.timestamp)")
+        locations = {} 
+        months = ["January", "February", "March", "April", "May", 
+                  "June", "July", "August", "September", "October", "November",
+                  "December"]
+        totalEnergy = [0 for i in range(month)]
+        months = months[:month]
+
+        for row in cursor.fetchall():
+            if (int(row[1]) > month):
+                continue
+            if row[0] not in locations.keys():
+                locations[row[0]] = totalEnergy.copy()
+                locations[row[0]][int(row[1]) - 1] = float(row[2])
+            else:
+                locations[row[0]][int(row[1]) - 1] = locations[row[0]][int(row[1]) - 1] + float(row[2])
+        totalEnergyUsage = {'locations': locations, 'months': months}
+    return totalEnergyUsage
+
+'''
+Generates a view for graphs
+'''
+def homeView(request):
+    # Get current customer's customer ID 
+    cid = 3
+    #Assume year and month
+    #year = datetime.now().year
+    #month = datetime.now().month
+    year = 2022
+    month = 8
+
+    energyPriceGraphObject = getEnergyPrice(cid, year, month)
+    totalEnergyUsageObject = getTotalEnergyUsageByLocation(cid, year, month)
+    locationEnergyPieObject = getDeviceTypeEnergyUsage(cid, year, month)
+    deviceDailyEnergyUsageObject = getDeviceDailyEnergyUsage(cid)
+    return render(request, "home.html", {'energy_price': energyPriceGraphObject, 
+                                         'total_energy_usage': totalEnergyUsageObject,
+                                         'location_energy_pie': locationEnergyPieObject,
+                                         'device_energy_use': deviceDailyEnergyUsageObject,
+                                         'month': monthToName[month]})
