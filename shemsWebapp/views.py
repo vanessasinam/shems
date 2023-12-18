@@ -140,8 +140,13 @@ def add_device(request):
         form = DeviceForm(lids=customer_locations)
         context = {}
         context["form"] = form
-        return render(request, "add_device.html", context=context)
-
+        if form.is_valid():
+            return render(request, "add_device.html", context=context)
+        else:
+            for error in list(form.errors.values()):
+                messages.error(request, error)
+            return render(request, "add_device.html", context=context)
+        
 @login_required
 def edit_customer(request):
     if request.method == "POST":

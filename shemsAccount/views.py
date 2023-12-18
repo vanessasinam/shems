@@ -7,6 +7,7 @@ from django.urls import reverse
 from django.http import HttpResponse
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import authenticate, login
+from django.db import connection
 
 from .forms import NewUserForm
 from shemsWebapp.models import Customer
@@ -18,12 +19,14 @@ def register_request(request):
             user = form.save(commit=False)
             user.is_active = True
             user.save()
-            customer = Customer.objects.create(user=user)
-            customer.user = user
-            customer.first_name = "First Name"
-            customer.last_name = "Last Name"
-            customer.billing_address = "Address"
-            customer.save()
+            # customer = Customer.objects.create(user=user)
+            # customer.user = user
+            # customer.first_name = "First Name"
+            # customer.last_name = "Last Name"
+            # customer.billing_address = "Address"
+            # customer.save()
+            with connection.cursor() as cursor:
+                cursor.execute("INSERT INTO Customer(first_name, last_name, billing_address, user_id) VALUES (%s, %s, %s, %s)", ("First Name", "Last Name", "New York", user.id))
             return redirect("shemsAccount:login")
         else:
             for error in list(form.errors.values()):

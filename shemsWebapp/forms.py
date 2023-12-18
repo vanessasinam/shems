@@ -1,5 +1,5 @@
 from django import forms
-from django.forms import ModelForm
+from django.forms import ModelForm, ValidationError
 from django.contrib.auth.models import User
 from .models import (
     Customer,
@@ -66,7 +66,7 @@ class LocationForm(ModelForm):
         return location
 
 class DeviceForm(ModelForm):
-    lid = forms.ModelChoiceField(queryset=Location.objects.all(), empty_label='Select a location')
+    lid = forms.ModelChoiceField(queryset=Location.objects.none(), empty_label='Select a location')
     model_num = forms.ModelChoiceField(queryset=DeviceModel.objects.all(), empty_label='Select a model')
     
     class Meta:
@@ -80,7 +80,7 @@ class DeviceForm(ModelForm):
         return device
 
     def __init__(self, *args, **kwargs):   
-        lids = kwargs.pop('lids')
+        lids = kwargs.pop('lids')   
         super(DeviceForm, self).__init__(*args, **kwargs)
         if lids:
             self.fields['lid'] = forms.ModelChoiceField(
