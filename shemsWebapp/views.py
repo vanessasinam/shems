@@ -294,10 +294,16 @@ Generates a view for graphs
 '''
 def homeView(request):
     # Get current customer's customer ID 
-    cid = 3
+    
+    #curr_user = request.user
+    #customer = Customer.objects.get(user=curr_user)
+    #cid = customer.cid
+
     #Assume year and month
     #year = datetime.now().year
     #month = datetime.now().month
+    
+    cid = 3
     year = 2022
     month = 8
 
