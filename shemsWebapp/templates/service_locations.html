@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+{% load crispy_forms_tags %}
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Service Locations</title>
+		<link
+		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+		  rel="stylesheet"
+		  integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
+		  crossorigin="anonymous"
+		/>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				background-color: #b7d7e2;
+			}
+			.container {
+				margin: 0 auto;
+				width: 60%;
+			}
+			h2 {
+				font-size: 36px;
+				margin: 10px;
+				padding: 10px;
+				text-align: center;
+				color:  #053c4f;
+				font-family: Verdana;
+			 }
+			h3 {
+				font-size: 24px;
+				margin: 0 auto;
+				padding: 10px;
+				width: 40%;
+				text-align: center;
+				color: #353a3b;
+			}
+			.location {
+				margin: 0 auto;
+				padding-left: 30px;
+				padding-top: 10px;
+				padding-bottom: 10px;
+				box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+				width: 50%;
+			}
+			p {	
+				color: rgb(30, 28, 28);
+				font-size: 18px;
+				font-family: Verdana;
+			}
+			h4 {
+				text-align: center;
+			}
+			h4 a {
+				text-decoration: none;
+				font-family: Verdana;
+			}
+			.delete_location {
+				color:  #353a3b;
+				background-color: transparent;
+				border-color: transparent;
+				cursor: pointer;
+				width: 30px;
+				float: right;
+			}
+			.delete_location:hover {
+        		color: rgb(179, 33, 33);
+      		}
+		</style>
+	</head>
+<body>
+<div class="container py-5">
+	<h2>Service locations</h2>
+    {% for location in customer_locations %}
+	<div class="location">
+		<form method="POST">
+			{% csrf_token %}
+			<input
+				type="hidden"
+				id="lid"
+				name="lid"
+                value="{{ location.lid }}"
+			/>
+			<span class="y">
+				<button name="delete_location" class="delete_location" value="delete_location">
+				X
+				</button>
+			</span>
+		</form>
+		<p> Location ID: {{location.lid}}</p>
+		<p> Bedrooms: {{location.num_bedrooms}}</p>
+		<p> Building: {{location.building}}</p>
+		<p> Street: {{location.street}}</p>
+		<p> Zipcode: {{location.zipcode}}</p>		
+	</div>
+    {% endfor %}
+	<h4><a href="addLocation">Add more service locations</a></h4>
+	<h4><a href="{% url 'shemsWebapp:profile' %}">Back to profile</a></h4>
+</div>
+</body>
+</html>

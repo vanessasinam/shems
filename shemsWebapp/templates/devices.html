@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+{% load crispy_forms_tags %}
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>Devices</title>
+		<link
+		  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css"
+		  rel="stylesheet"
+		  integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD"
+		  crossorigin="anonymous"
+		/>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+				background-color: #b7d7e2;
+			}
+			.container {
+				margin: 0 auto;
+				width: 60%;
+			}
+			h2 {
+				font-size: 36px;
+				margin: 10px;
+				padding: 10px;
+				text-align: center;
+				color:  #053c4f;
+				font-family: Verdana;
+			 }
+			h3 {
+				font-size: 24px;
+				margin: 0 auto;
+				padding: 10px;
+				width: 40%;
+				text-align: center;
+				color: #353a3b;
+			}
+			.device {
+				margin: 0 auto;
+				padding-left: 30px;
+				padding-top: 10px;
+				padding-bottom: 10px;
+				box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+				width: 50%;
+			}
+			p {	
+				color: rgb(30, 28, 28);
+				font-size: 18px;
+				font-family: Verdana;
+			}
+			h4 {
+				text-align: center;
+			}
+			h4 a {
+				text-decoration: none;
+				font-family: Verdana;
+			}
+			.delete_device {
+				color:  #353a3b;
+				background-color: transparent;
+				border-color: transparent;
+				cursor: pointer;
+				width: 30px;
+				float: right;
+			}
+			.delete_device:hover {
+        		color: rgb(179, 33, 33);
+      		}
+		</style>
+	</head>
+<body>
+<body>
+<div class="container py-5">
+	<h2>Devices</h2>
+    {% for device in customer_devices %}
+	<div class="device">
+		<form method="POST">
+			{% csrf_token %}
+			<input
+				type="hidden"
+				id="did"
+				name="did"
+                value="{{ device.did }}"
+			/>
+			<span class="y">
+				<button name="delete_device" class="delete_device" value="delete_device">
+				X
+				</button>
+			</span>
+		  </form>
+		<p> Device ID: {{device.did}}</p>
+		<p> Location: {{device.lid_id}}</p>
+		<p> Model number: {{device.model_num_id}}</p>		
+	</div>	
+    {% endfor %}	
+	<h4><a href="addDevice">Add more devices</a></h4>
+	<h4><a href="{% url 'shemsWebapp:profile' %}">Back to profile</a></h4>
+</div>
+</body>
+</html>
