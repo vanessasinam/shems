@@ -66,6 +66,14 @@
 			font-size: 18px;
 			font-family: Verdana;
 		}
+
+		.center {
+			margin: auto;
+			width: 50%;
+			border: 3px ;
+			padding: 30px;
+		}
+
 	</style>
 </head>
 <body>
@@ -93,5 +101,296 @@
     <h3><a href="devices">Devices</a></h3>
 	<h3><a href="{% url 'shemsWebapp:editcustomer' %}">Edit customer details</a></h3>
 </div>
+<div class = "center">
+	<div class="chartCard" >
+		<div class="chartBox" style="height:40vh; width:80vw;">
+			<canvas id="TotalEnergyUsage"></canvas>
+		</div>
+		<div class="chartBox" style="height:40vh; width:80vw iv">
+			<canvas id="EnergyPrice" ></canvas>
+		</div>
+	</div>
+
+	<div class= "center" style="display: table; ">
+		<div class="center" style=" display: table-row;"></div>
+		{% for key, values in location_energy_pie.items%}
+	
+			<div class="chartBox" style="display: table-cell; height:40vh; width:80vw">
+				<canvas id="location_energy_pie_{{key}}" ></canvas>
+			</div>
+		
+		{% endfor %}
+		</div>
+	</div>
+	<div class="center">
+		<div class="chartBox" style="height:40vh; width:80vw;" >
+			<input type="date" onchange="startDateFilter(this)" value="2023-01-01" min="2022-07-01">
+			<input type="date" onchange="endDateFilter(this)"value="2023-12-31" min="2022-09-01">
+			<canvas id="deviceEnergyUsage"></canvas>
+		</div>
+	</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src= "https://imhvost.github.io/chart-utils.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<!-- energy price graph -->
+<script>
+const Utils = ChartUtils.init();
+
+let energy_price_data = {
+	labels:[],
+	datasets:[]
+};
+
+for (const [key, value] of Object.entries({{energy_price|safe}})) {
+	const dates = value.date
+	const price = value.price      
+	
+	// setup block
+	energy_price_data.labels = dates
+	const dsColor = Utils.namedColor(energy_price_data.datasets.length);
+	const newDataset = {
+		label: 'zipcode: ' + key,
+		backgroundColor: Utils.transparentize(dsColor, 0.5),
+		borderColor: dsColor,
+		data: price,
+	};
+	energy_price_data.datasets.push(newDataset);  
+}
+
+//energy price graph config
+const energy_price_config = {
+	type: 'line',
+	data: energy_price_data,
+	options: {
+		responsive: true,
+		plugins: {
+			legend: {
+				position: 'top',
+			},
+			title: {
+				display: true,
+				text: 'Average Hourly Energy Price In {{month}}'
+			},
+
+		},
+		scales: {
+			x: {
+				title: {
+					display: true,
+					text: 'Time (Hr)'
+				}
+			},
+			y: {
+				title: {
+					display: true,
+					text: 'Price per kiloWatt'
+				}
+			}
+		}
+	},
+};
+
+//render / init block
+const energy_price_chart = new Chart(document.getElementById("EnergyPrice"), energy_price_config);
+
+</script>
+
+<!-- total energy usage chart -->
+<script>
+let total_energy_usage_data = {
+	labels: [],
+	datasets:[]
+};
+
+for (const [key, value] of Object.entries({{total_energy_usage|safe}})) {
+	if (key == 'months') {
+		total_energy_usage_data.labels = value
+		console.log(total_energy_usage_data.labels)
+	} else {
+		console.log('here')
+		for (const [k, v] of Object.entries(value)) {
+			const usage = v
+			console.log(usage)
+			// setup block
+			const dsColor = Utils.namedColor(total_energy_usage_data.datasets.length);
+			const newDataset = {
+				label: 'location ' + k,
+				backgroundColor: Utils.transparentize(dsColor, 0.5),
+				borderColor: dsColor,
+				data: usage,
+			};
+			total_energy_usage_data.datasets.push(newDataset);
+		}
+		
+	}    
+}
+
+//config
+const total_energy_usage_config = {
+	type: 'bar',
+	data: total_energy_usage_data,
+	options: {
+		responsive: true,
+		plugins: {
+			legend: {
+				position: 'top',
+			},
+			title: {
+				display: true,
+				text: 'Total Energy Usage By Location'
+			},
+
+		},
+		scales: {
+			x: {
+				title: {
+					display: true,
+					text: 'Months'
+				}
+			},
+			y: {
+				title: {
+					display: true,
+					text: 'Energy Used in kiloWatts'
+				}
+			}
+		}
+	},
+};
+	//render / init block
+const totalEnergyUsage = new Chart(document.getElementById("TotalEnergyUsage"), total_energy_usage_config);
+</script>
+
+<!-- location energy pie charts  -->
+<script>
+	for (const [key, value] of Object.entries({{location_energy_pie|safe}})) {
+		const model_types = value.model_type
+		const energy_used = value.energy_use
+		console.log(model_types)
+		console.log(energy_used)
+		// setup block
+		const location_energy_pie_data = {
+			labels: model_types,
+			datasets: [{
+				label: 'Location',
+				data: energy_used,
+				backgroundColor: [
+					'rgb(255, 99, 132)',
+					'rgb(54, 162, 235)',
+					'rgb(255, 205, 86)'
+				],
+				hoverOffset: 4
+			}]
+		};
+
+		//config
+		const location_energy_pie_config = {
+			type: 'pie',
+			data: location_energy_pie_data,
+			options: {
+				plugins: {
+					title: {
+					display: true,
+					text: 'Location ' + String(key) + ' Energy Usage in {{month}}'
+					}
+				}
+			}
+		};
+		const k = 'location_energy_pie_'+ String(key); 
+		console.log(k);
+		//render / init block
+		const myNewChart = new Chart(document.getElementById(k), location_energy_pie_config);
+	}
+
+</script>
+
+<!-- device energy usage -->
+<script>
+	const device_energy_use_data = {
+		datasets:[]
+	};
+	for (const [key, value] of Object.entries({{device_energy_use|safe}})) {
+		console.log(value.time_labels);
+		console.log(value.values);
+		const data_value = [];
+		let i = 0;
+		while (i < value.time_labels.length)
+		{
+			let temp = {};
+			let dayjs = new Date(value.time_labels[i]);
+			temp['x'] = dayjs.setHours(0,0,0,0);
+			temp['y'] = value.values[i];
+			i = i + 1;
+			data_value.push(temp);
+		}
+		console.log(data_value); 
+		const dsColor = Utils.namedColor(device_energy_use_data.datasets.length);
+		const newDataset = {
+			label: "Device" + String(key),
+			data : data_value,
+			backgroundColor: dsColor,
+			borderColor: dsColor,
+			borderWidth: 1,
+			barThickness: 3,
+		}
+	   
+		device_energy_use_data.datasets.push(newDataset);
+	}
+	console.log(device_energy_use_data.datasets);
+	//config
+	const device_energy_use_config =  {
+		type: 'line',
+		data: device_energy_use_data,
+		options: {
+			plugins: {
+				title: {
+					display: true,
+					text: 'Energy Usage for Devices'
+				},
+				parsing: {
+					xAxisKey: 'x',
+					yAxisKey: 'y'
+				}
+			},
+			scales: {
+				x: {
+					min: '2022-08-01',
+					max:'2023-12-31',
+					type:'time',
+					time:{
+						unit:'day'
+					},
+					title: {
+						display: true,
+						text: 'Date'
+					}
+				},
+				y: {
+					beginAtZero: true,
+					title: {
+						display: true,
+						text: 'Energy used in kiloWatts'
+					}
+				}
+			}
+		}
+	};
+	  
+	//render / init block
+	const deviceEnergyUsageChart = new Chart(document.getElementById('deviceEnergyUsage'), device_energy_use_config);
+ 
+	function startDateFilter(date){
+		const startDate = new Date(date.value);
+		deviceEnergyUsageChart.config.options.scales.x.min = startDate.setHours(0,0,0,0);
+		deviceEnergyUsageChart.update();
+	}
+
+	function endDateFilter(date){
+		const endDate = new Date(date.value);
+		deviceEnergyUsageChart.config.options.scales.x.max = endDate.setHours(0,0,0,0);
+		deviceEnergyUsageChart.update();
+	}
+</script>
 </body>
 </html>

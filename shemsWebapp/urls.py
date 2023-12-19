@@ -27,5 +27,5 @@ urlpatterns = [
     path("profile/devices/", views.devices, name="devices"), 
     path("profile/devices/addDevice/", views.add_device, name="addDevice"),
     path("editcustomer/", views.edit_customer, name="editcustomer"),
-    path('home', views.homeView, name='homeView'), 
+    # path('home', views.homeView, name='homeView'), 
 ]
