@@ -81,15 +81,6 @@
 	<div class="logout">
 		<a href="{% url 'shemsAccount:logout' %}" class="logout">Logout</a>
 	</div>
-	{% if messages %}
-		<div class="errorBox">
-			<div class="messages">	
-				{% for message in messages %}
-				<p{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</p>
-				{% endfor %}
-			</div>
-		</div>
-	{% endif %}	
 	<h1>CUSTOMER PROFILE</h1>
 	<div class="customer">
   		<p> Customer ID: {{cid}}</p>

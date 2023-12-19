@@ -26,6 +26,6 @@ urlpatterns = [
     path("profile/locations/addLocation/", views.add_location, name="addLocation"), 
     path("profile/devices/", views.devices, name="devices"), 
     path("profile/devices/addDevice/", views.add_device, name="addDevice"),
-    path("editcustomer/", views.edit_customer, name="editcustomer"),
-    # path('home', views.homeView, name='homeView'), 
+    path("editcustomer/", views.edit_customer, name="editcustomer"), 
+    path('ajax/load-device-types/', views.load_device_types, name='ajax_load_device_types'),
 ]
