@@ -37,10 +37,11 @@
 		}
 	</style>
 </head>
+{% block content %}
 <body>
 <div class="container py-5">
 	<h1>Device</h1>
-	<form method="POST">
+	<form method="POST" id="deviceForm" data-device-url="{% url 'shemsWebapp:ajax_load_device_types' %}" novalidate>
 		{% csrf_token %}
 		{{ form|crispy }}
 		<button class="btn btn-primary" type="submit">Add device</button>
@@ -49,3 +50,23 @@
 </div>
 </body>
 </html>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+  $("#id_model_type").change(function () {
+	var url = $("#deviceForm").attr("data-device-url");
+	var modelType = $(this).val();
+
+	$.ajax({                       
+	  url: url,
+	  data: {
+		'model_type': modelType
+	  },
+	  success: function (data) {
+		$("#id_model_num").html(data);
+	  }
+	});
+
+  });
+</script>
+
+{% endblock %}

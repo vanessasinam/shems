@@ -8,7 +8,8 @@ from django.contrib.auth.decorators import login_required
 from .models import (
     Customer,
     Location,
-    Device
+    Device,
+    DeviceModel
 )
 from .forms import (
     CustomerForm,
@@ -114,6 +115,14 @@ def add_location(request):
         context["form"] = form
 
         return render(request, "add_location.html", context=context)
+
+def load_device_types(request):
+    model_type = request.GET.get('model_type')
+    if model_type == "All":
+        models = DeviceModel.objects.all()
+    else:
+        models = DeviceModel.objects.filter(model_type=model_type)
+    return render(request, 'device_types_options.html', {'models': models})
 
 @login_required
 def add_device(request):

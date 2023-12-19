@@ -66,13 +66,22 @@ class LocationForm(ModelForm):
         return location
 
 class DeviceForm(ModelForm):
+    DEVICE_TYPES = (
+        ('All','All'),
+        ('Refrigerator', 'Refrigerator'),
+        ('Dryer', 'Dryer'),
+        ('Washing machine', 'Washing machine'),
+        ('Television', 'Television'),
+        ('AC system', 'AC system'),
+        ('Light', 'Light')
+    )
     lid = forms.ModelChoiceField(queryset=Location.objects.none(), empty_label='Select a location')
-    model_num = forms.ModelChoiceField(queryset=DeviceModel.objects.all(), empty_label='Select a model')
-    
+    model_type = forms.ChoiceField(choices=DEVICE_TYPES, required=False)
+
     class Meta:
         model = Device
-        fields= ["lid", "model_num"]
-    
+        fields= ["lid", "model_type", "model_num"]
+            
     def save(self, commit=True):
         device = super(DeviceForm, self).save(commit=False)
         if commit:
@@ -87,3 +96,17 @@ class DeviceForm(ModelForm):
                 queryset=Location.objects.filter(lid__in=lids),
                 empty_label='Select a location'
             )
+
+        if 'model_type' in self.data:
+            try:
+                model_type = int(self.data.get('model_type'))
+                if 'model_type' == "All" :
+                    self.fields['model_num'].queryset = DeviceModel.objects.all()
+                else:
+                    self.fields['model_num'].queryset = DeviceModel.objects.filter(model_type=model_type)
+                self.fields['model_num'].empty_label = 'Select a model'
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk:
+            self.fields['model_num'].queryset = self.Location.objects.none()
+

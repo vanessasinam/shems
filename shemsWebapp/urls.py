@@ -27,4 +27,5 @@ urlpatterns = [
     path("profile/devices/", views.devices, name="devices"), 
     path("profile/devices/addDevice/", views.add_device, name="addDevice"),
     path("editcustomer/", views.edit_customer, name="editcustomer"), 
+    path('ajax/load-device-types/', views.load_device_types, name='ajax_load_device_types'),
 ]
