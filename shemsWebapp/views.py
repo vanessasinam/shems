@@ -40,15 +40,15 @@ def dictfetchall(cursor):
     columns = [col[0] for col in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
-def get_customer_locations(customer):
+def get_customer_locations(cid):
     with connection.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM Location JOIN CustomerLocation ON Location.lid =  CustomerLocation.lid_id where CustomerLocation.cid_id = {customer.cid};")
+        cursor.execute("SELECT * FROM Location JOIN CustomerLocation ON Location.lid =  CustomerLocation.lid_id where CustomerLocation.cid_id = %s;", [cid])
         customer_locations = dictfetchall(cursor)
     return customer_locations
 
-def get_customer_devices(customer):
+def get_customer_devices(cid):
     with connection.cursor() as cursor:
-        cursor.execute(f"SELECT * FROM Device JOIN CustomerLocation ON Device.lid_id =  CustomerLocation.lid_id where CustomerLocation.cid_id = {customer.cid};")
+        cursor.execute("SELECT * FROM Device JOIN CustomerLocation ON Device.lid_id =  CustomerLocation.lid_id where CustomerLocation.cid_id = %s;", [cid])
         customer_devices = dictfetchall(cursor)
     return customer_devices
 
@@ -57,22 +57,27 @@ def get_customer_devices(customer):
 def profile(request):
     curr_user = request.user
 
-    customer = Customer.objects.get(user=curr_user)
-    customer_locations = get_customer_locations(customer)
-    customer_devices= get_customer_devices(customer)
+    cid = 0
+    #customer = Customer.objects.get(user=curr_user)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT * FROM Customer WHERE user_id = %s;", [curr_user.id])
+        customer = dictfetchall(cursor)[0]
+
+    print(customer)
+    #customer = Customer.objects.get(user=curr_user)
     context = {}
-    context.update({"cid": customer.cid})
-    context.update({"first_name": customer.first_name})
-    context.update({"last_name": customer.last_name})
-    context.update({"billing_address": customer.billing_address})
+    context.update({"cid": customer['cid']})
+    context.update({"first_name": customer['first_name']})
+    context.update({"last_name": customer['last_name']})
+    context.update({"billing_address": customer['billing_address']})
     
     year = datetime.now().year
     month = datetime.now().month
-    energyPriceGraphObject = getEnergyPrice(customer.cid, year, month)
-    totalEnergyUsageObject = getTotalEnergyUsageByLocation(customer.cid, year, month)
+    energyPriceGraphObject = getEnergyPrice(customer['cid'], year, month)
+    totalEnergyUsageObject = getTotalEnergyUsageByLocation(customer['cid'], year, month)
     
-    locationEnergyPieObject = getDeviceTypeEnergyUsage(customer.cid, year, month)
-    deviceDailyEnergyUsageObject = getDeviceDailyEnergyUsage(customer.cid)                                    
+    locationEnergyPieObject = getDeviceTypeEnergyUsage(customer['cid'], year, month)
+    deviceDailyEnergyUsageObject = getDeviceDailyEnergyUsage(customer['cid'])                                    
     context.update({'total_energy_usage': totalEnergyUsageObject})
     context.update({'energy_price': energyPriceGraphObject})
     context.update({'location_energy_pie': locationEnergyPieObject})
@@ -84,8 +89,12 @@ def profile(request):
 def locations(request):
     curr_user = request.user
     
-    customer = Customer.objects.get(user=curr_user)
-    customer_locations = get_customer_locations(customer)
+    cid = 0
+    #customer = Customer.objects.get(user=curr_user)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT cid FROM Customer WHERE user_id = %s;",[curr_user.id])
+        cid = cursor.fetchone()[0]
+    customer_locations = get_customer_locations(cid)
     context = {}
     context.update({"customer_locations": customer_locations})
 
@@ -94,7 +103,7 @@ def locations(request):
         lid = request.POST.get("lid")
         if button == "delete_location":
             with connection.cursor() as cursor:
-                cursor.execute(f"DELETE FROM CustomerLocation WHERE cid_id = {customer.cid} AND lid_id = {lid};")
+                cursor.execute("DELETE FROM CustomerLocation WHERE cid_id = %s AND lid_id = %s;", [cid, lid])
             return redirect(reverse("shemsWebapp:locations"))
 
     return render(request, "service_locations.html", context)
@@ -103,8 +112,12 @@ def locations(request):
 def devices(request):
     curr_user = request.user
 
-    customer = Customer.objects.get(user=curr_user)
-    customer_devices= get_customer_devices(customer)
+    # customer = Customer.objects.get(user=curr_user)
+    cid = 0
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT cid FROM Customer WHERE user_id = %s;", [curr_user.id])
+        cid = cursor.fetchone()[0]
+    customer_devices= get_customer_devices(cid)
     context = {}
     context.update({"customer_devices": customer_devices})
 
@@ -113,7 +126,7 @@ def devices(request):
         did = request.POST.get("did")
         if button == "delete_device":
             with connection.cursor() as cursor:
-                cursor.execute(f"DELETE FROM Device WHERE did = {did}")
+                cursor.execute("DELETE FROM Device WHERE did = %s;",[did])
             return redirect(reverse("shemsWebapp:devices"))
 
     return render(request, "devices.html", context)
@@ -125,16 +138,17 @@ def add_location(request):
         if form.is_valid():
             loc = form.save(commit=False)
             curr_user = request.user
-            customer = Customer.objects.get(user=curr_user)
-            cid = customer.cid
-            # location = Location.objects.create(num_bedrooms=loc.num_bedrooms, num_occupants=loc.num_occupants, area=loc.area, unit=loc.unit, street=loc.street, building=loc.building, city=loc.city, zipcode=loc.zipcode)
+            # customer = Customer.objects.get(user=curr_user)
+            # cid = customer.cid
+            cid = 0
             with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO Location(num_bedrooms, num_occupants, area, "
-                               + f"unit, street, building, city, zipcode) VALUES ({loc.num_bedrooms}," 
-                               + f"{loc.num_occupants}, {loc.area}, {loc.unit}, {loc.street}, "
-                               + f"{loc.building}, {loc.city}, {loc.zipcode}) returning lid")
+                cursor.execute("SELECT cid FROM Customer WHERE user_id = %s;", [curr_user.id])
+                cid = cursor.fetchone()[0]
+            with connection.cursor() as cursor:
+                cursor.execute("INSERT INTO Location(num_bedrooms, num_occupants, area, unit, street, building, city, zipcode) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) returning lid", 
+                               [loc.num_bedrooms, loc.num_occupants, loc.area, loc.unit, loc.street, loc.building, loc.city,  loc.zipcode ])
                 lid = cursor.fetchone()[0]                    
-                cursor.execute(f"INSERT INTO CustomerLocation(cid_id, lid_id) VALUES ({cid}, {lid})")           
+                cursor.execute("INSERT INTO CustomerLocation(cid_id, lid_id) VALUES (%s, %s)", [cid, lid])           
             return redirect(reverse("shemsWebapp:locations"))
         else:
             for error in list(form.errors.values()):
@@ -147,20 +161,33 @@ def add_location(request):
 
         return render(request, "add_location.html", context=context)
 
+#change this function
 def load_device_types(request):
     model_type = request.GET.get('model_type')
     if model_type == "All":
-        models = DeviceModel.objects.all()
+        # models = DeviceModel.objects.all()
+        models = {}
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Model;")
+            models = dictfetchall(cursor)
     else:
-        models = DeviceModel.objects.filter(model_type=model_type)
+        #models = DeviceModel.objects.filter(model_type=model_type)
+        models = {}
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Model WHERE model_type = %s;", [model_type])
+            models = dictfetchall(cursor)
     return render(request, 'device_types_options.html', {'models': models})
 
 @login_required
 def add_device(request):
     curr_user = request.user
-    customer = Customer.objects.get(user=curr_user)
+    cid = 0
     with connection.cursor() as cursor:
-        cursor.execute(f"SELECT lid_id FROM CustomerLocation where cid_id = {customer.cid};")
+        cursor.execute("SELECT cid FROM Customer WHERE user_id = %s;", [curr_user.id])
+        cid = cursor.fetchone()[0]
+    #customer = Customer.objects.get(user=curr_user)
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT lid_id FROM CustomerLocation where cid_id = %s;", [cid])
         result_tuples = cursor.fetchall()
         customer_locations = [item[0] for item in result_tuples]
     if request.method == "POST":       
@@ -170,7 +197,7 @@ def add_device(request):
             lid = device.lid.lid
             model_num = device.model_num.model_num
             with connection.cursor() as cursor:
-                cursor.execute(f"INSERT INTO Device(lid_id, model_num_id) VALUES ({lid},{model_num})")
+                cursor.execute("INSERT INTO Device(lid_id, model_num_id) VALUES (%s, %s)", [lid, model_num])
             return redirect(reverse("shemsWebapp:devices"))
         else:
             for error in list(form.errors.values()):
@@ -199,8 +226,8 @@ def edit_customer(request):
             billing_address = customer.billing_address
             user_id = user.pk
             with connection.cursor() as cursor:
-                cursor.execute(f"UPDATE Customer SET first_name = {first_name}, last_name = {last_name}, " 
-                                + f"billing_address = {billing_address} where user_id = {user_id}")
+                cursor.execute("UPDATE Customer SET first_name = %s, last_name = %s, billing_address = %s where user_id = %s",
+                                [first_name, last_name, billing_address, user_id])
             return redirect(reverse("shemsWebapp:profile"))
         else:
             for error in list(form.errors.values()):
@@ -226,12 +253,12 @@ def getDeviceDailyEnergyUsage(cid):
 
     with connection.cursor() as cursor:
         #device energy consumption by day 
-        cursor.execute(f"SELECT DATE_TRUNC('DAY', timestamp) as time, device.did, SUM(value)"
+        cursor.execute("SELECT DATE_TRUNC('DAY', timestamp) as time, device.did, SUM(value)"
                        + " FROM (customerLocation JOIN device ON customerLocation.lid_id = device.lid_id)"
                        + " JOIN data ON device.did = data.did"
-                       +  f" WHERE cid_id = {cid} AND label = 'energy use'"
+                       +  " WHERE cid_id = %s AND label = 'energy use'"
                        + " GROUP BY DATE_TRUNC('DAY', timestamp), device.did"
-                       + " ORDER BY DATE_TRUNC('DAY', timestamp), device.did")
+                       + " ORDER BY DATE_TRUNC('DAY', timestamp), device.did", [cid])
         
         deviceDailyEnergyUse= {}
 
@@ -251,13 +278,13 @@ at a particular location for the current month
 '''
 def getDeviceTypeEnergyUsage(cid, year, month):
     with connection.cursor() as cursor: 
-        cursor.execute(f"SELECT device.lid_id, model_type, SUM(value)"
+        cursor.execute("SELECT device.lid_id, model_type, SUM(value)"
                        + " FROM ((customerLocation JOIN device ON customerLocation.lid_id=device.lid_id)"
                        + " JOIN model ON device.model_num_id = model.model_num) JOIN data ON device.did=data.did"
-                       + f" WHERE cid_id = {cid} AND label = 'energy use'"
-                       + f" AND EXTRACT(MONTH FROM data.timestamp) = {month}"
-                       + f" AND EXTRACT(YEAR FROM data.timestamp) = {year}"
-                       + " GROUP BY device.lid_id, model_type")
+                       + " WHERE cid_id = %s AND label = 'energy use'"
+                       + " AND EXTRACT(MONTH FROM data.timestamp) = %s"
+                       + " AND EXTRACT(YEAR FROM data.timestamp) = %s"
+                       + " GROUP BY device.lid_id, model_type", [cid, month, year])
         locations = {} 
         for row in cursor.fetchall():
             if row[0] not in locations.keys():
@@ -277,10 +304,10 @@ def getEnergyPrice(cid, year, month):
         cursor.execute("SELECT EXTRACT(HOUR FROM date_time), EnergyPrice.zipcode, AVG(price_per_hr)"
                        + " FROM (CustomerLocation JOIN Location ON CustomerLocation.lid_id=Location.lid)" 
                        + " JOIN EnergyPrice ON Location.zipcode = EnergyPrice.zipcode"
-                       + f" WHERE cid_id = {cid} AND EXTRACT(MONTH FROM date_time) = {month}"
-                       + f" AND EXTRACT(YEAR FROM date_time) = {year}"
+                       + " WHERE cid_id = %s AND EXTRACT(MONTH FROM date_time) = %s"
+                       + " AND EXTRACT(YEAR FROM date_time) = %s"
                        + " GROUP BY EXTRACT(HOUR FROM date_time), EnergyPrice.zipcode"
-                       + " ORDER BY EXTRACT(HOUR FROM date_time)")
+                       + " ORDER BY EXTRACT(HOUR FROM date_time)", [cid, month, year])
         zipcodes = {}
         for row in cursor.fetchall():
             if row[1] not in zipcodes.keys():
@@ -301,10 +328,10 @@ def getTotalEnergyUsageByLocation(cid, year, month):
         cursor.execute(f"SELECT customerLocation.lid_id, EXTRACT(MONTH FROM data.timestamp) as month, SUM(value)"
                        + " FROM (customerLocation JOIN device ON customerLocation.lid_id = device.lid_id)"
                        + " JOIN data ON device.did = data.did"
-                       + f" WHERE cid_id = {cid} AND label = 'energy use'"
-                       + f" AND EXTRACT(YEAR FROM data.timestamp) = {year}"
+                       + " WHERE cid_id = %s AND label = 'energy use'"
+                       + " AND EXTRACT(YEAR FROM data.timestamp) = %s"
                        + " GROUP BY customerLocation.lid_id, EXTRACT(MONTH FROM data.timestamp)"
-                       + " ORDER BY EXTRACT(MONTH from data.timestamp)")
+                       + " ORDER BY EXTRACT(MONTH from data.timestamp)", [cid, year])
         locations = {} 
         months = ["January", "February", "March", "April", "May", 
                   "June", "July", "August", "September", "October", "November",
