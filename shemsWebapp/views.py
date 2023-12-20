@@ -168,13 +168,13 @@ def load_device_types(request):
         # models = DeviceModel.objects.all()
         models = {}
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM Model;")
+            cursor.execute("SELECT * FROM deviceModel;")
             models = dictfetchall(cursor)
     else:
         #models = DeviceModel.objects.filter(model_type=model_type)
         models = {}
         with connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM Model WHERE model_type = %s;", [model_type])
+            cursor.execute("SELECT * FROM deviceModel WHERE model_type = %s;", [model_type])
             models = dictfetchall(cursor)
     return render(request, 'device_types_options.html', {'models': models})
 
@@ -197,7 +197,8 @@ def add_device(request):
             lid = device.lid.lid
             model_num = device.model_num.model_num
             with connection.cursor() as cursor:
-                cursor.execute("INSERT INTO Device(lid_id, model_num_id) VALUES (%s, %s)", [lid, model_num])
+                cursor.execute("INSERT INTO Device(lid_id, model_num_id) VALUES (%s, %s)", 
+                               [lid, model_num])
             return redirect(reverse("shemsWebapp:devices"))
         else:
             for error in list(form.errors.values()):
@@ -226,7 +227,8 @@ def edit_customer(request):
             billing_address = customer.billing_address
             user_id = user.pk
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE Customer SET first_name = %s, last_name = %s, billing_address = %s where user_id = %s",
+                cursor.execute("UPDATE Customer SET first_name = %s, last_name = %s,"
+                               +" billing_address = %s where user_id = %s",
                                 [first_name, last_name, billing_address, user_id])
             return redirect(reverse("shemsWebapp:profile"))
         else:
@@ -280,11 +282,11 @@ def getDeviceTypeEnergyUsage(cid, year, month):
     with connection.cursor() as cursor: 
         cursor.execute("SELECT device.lid_id, model_type, SUM(value)"
                        + " FROM ((customerLocation JOIN device ON customerLocation.lid_id=device.lid_id)"
-                       + " JOIN model ON device.model_num_id = model.model_num) JOIN data ON device.did=data.did"
+                       + " JOIN deviceModel ON device.model_num_id = deviceModel.model_num) JOIN data ON device.did=data.did"
                        + " WHERE cid_id = %s AND label = 'energy use'"
                        + " AND EXTRACT(MONTH FROM data.timestamp) = %s"
                        + " AND EXTRACT(YEAR FROM data.timestamp) = %s"
-                       + " GROUP BY device.lid_id, model_type", [cid, month, year])
+                       + " GROUP BY device.lid_id, deviceModel.model_type", [cid, month, year])
         locations = {} 
         for row in cursor.fetchall():
             if row[0] not in locations.keys():

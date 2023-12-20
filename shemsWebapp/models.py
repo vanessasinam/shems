@@ -58,7 +58,7 @@ class DeviceModel(models.Model):
     class Meta:
         # Set the table name to the existing table name in PostgreSQL
         managed = False
-        db_table = 'model'
+        db_table = 'devicemodel'
 
 class Device(models.Model):
     # Define fields that match the columns in your existing table
