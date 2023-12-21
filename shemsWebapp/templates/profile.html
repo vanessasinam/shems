@@ -14,24 +14,70 @@
 		body {
 			margin: 0;
 			padding: 0;
-			background-color: #b7d7e2;
+			background-color: #d0bbc9;
 		}
 		.container {
-			margin: 0 auto;
-			width: 60%;
+			width: 100%;
+			display: flex;
+        	flex-direction: column;
+			overflow: auto;
+        	height: 100vh;
+        	max-width: none;
+        	padding: 0;
+		}
+		.profile {
+			margin: 0 auto; 
+       		width: 80%;
+			display: flex;
+        	flex-direction: row;
 		}
 		.logout {
-			color:  #141414;
-			background-color: #6a8389;;
+			margin: 10px;
+			background-color: #6a8389;
+			border-radius: 10px;
 			box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
 			cursor: pointer;
-			width: 60px;
+			width: 70px;
 			text-align: center;
 			float: right;
+			justify-content: right;
 		}
 		.logout a {
 			text-decoration: none;
 			font-family: Verdana;
+		}
+		.link-text {
+			color: #5d2b2b;
+		}
+		.customer {
+			margin: 0 auto;
+			padding-left: 30px;
+			padding-top: 10px;
+			padding-bottom: 5px;
+			box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+			width: 50%;
+		}
+		.edit-customer {
+			margin: 10px;
+			background-color: #6a8389;
+			border-radius: 10px;
+			box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+			cursor: pointer;
+			width: 50px;
+			text-align: center;
+			float: right;
+			justify-content: right;
+		}
+		.edit-customer a {
+			text-decoration: none;
+			font-family: Verdana;
+		}
+		.links {
+			margin: 0 auto;
+			padding-left: 30px;
+			padding-top: 10px;
+			padding-bottom: 10px;
+			width: 40%;
 		}
 		h1 {
 			font-size: 36px;
@@ -42,10 +88,9 @@
 			font-family: Verdana;
  		}
 		h3 {
-			font-size: 24px;
+			font-size: 22px;
 			margin: 0 auto;
-			padding: 10px;
-			width: 40%;
+			padding: 5px;
 			text-align: center;
 			color: #353a3b;
 		}
@@ -53,71 +98,72 @@
 			text-decoration: none;
 			font-family: Verdana;
 		}
-		.customer {
-			margin: 0 auto;
-			padding-left: 30px;
-			padding-top: 10px;
-			padding-bottom: 10px;
-			box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-			width:70%;
-		}
+		
 		p {
 			color: rgb(30, 28, 28);
 			font-size: 18px;
 			font-family: Verdana;
 		}
-
+		.chartCard {
+			display: flex;
+        	flex-direction: row;
+			padding: 20px;
+		}
+		.chartBox {
+			margin: 10px;
+			width: 80vw;
+		}
 		.center {
-			margin: auto;
-			width: 50%;
+			margin: 0 auto;
+			/* width: 50%; */
 			border: 3px ;
-			padding: 30px;
+			padding: 20px;
 		}
 
 	</style>
 </head>
 <body>
-<div class="container py-5">
+<div class="container">
 	<div class="logout">
-		<a href="{% url 'shemsAccount:logout' %}" class="logout">Logout</a>
+		<a href="{% url 'shemsAccount:logout' %}" class="link-text">Logout</a>
 	</div>
 	<h1>CUSTOMER PROFILE</h1>
-	<div class="customer">
-  		<p> Customer ID: {{cid}}</p>
-		<p> First name: {{first_name}}</p>
-		<p> Last name: {{last_name}}</p>
-		<p> Billing address: {{billing_address}}</p>
-	</div>	
-	<h3><a href="locations">Service Locations</a></h3>
-    <h3><a href="devices">Devices</a></h3>
-	<h3><a href="{% url 'shemsWebapp:editcustomer' %}">Edit customer details</a></h3>
-</div>
-<div class = "center">
-	<div class="chartCard" >
-		<div class="chartBox" style="height:40vh; width:80vw;">
+	<div class = profile>		
+		<div class="customer">
+			<div class="edit-customer">
+				<a href="{% url 'shemsWebapp:editcustomer' %}" class="link-text">Edit</a>
+			</div>
+			<p> Customer ID: {{cid}}</p>
+			<p> First name: {{first_name}}</p>
+			<p> Last name: {{last_name}}</p>
+			<p> Billing address: {{billing_address}}</p>
+		</div>	
+		<div class="links">
+			<h3><a href="locations" class="link-text">Service Locations</a></h3>
+			<h3><a href="devices" class="link-text">Devices</a></h3>
+		</div>
+	</div>
+	<div class="chartCard">
+		<div class="chartBox">
 			<canvas id="TotalEnergyUsage"></canvas>
 		</div>
-		<div class="chartBox" style="height:40vh; width:80vw iv">
+		<div class="chartBox">
 			<canvas id="EnergyPrice" ></canvas>
 		</div>
 	</div>
-
-	<div class= "center" style="display: table; ">
-		<div class="center" style=" display: table-row;"></div>
-		{% for key, values in location_energy_pie.items%}
-	
-			<div class="chartBox" style="display: table-cell; height:40vh; width:80vw">
-				<canvas id="location_energy_pie_{{key}}" ></canvas>
-			</div>
-		
-		{% endfor %}
-		</div>
-	</div>
-	<div class="center">
-		<div class="chartBox" style="height:40vh; width:80vw;" >
+	<div class="chartCard">	
+		<div class="chartBox">
 			<input type="date" onchange="startDateFilter(this)" value="2023-01-01" min="2022-07-01">
 			<input type="date" onchange="endDateFilter(this)"value="2023-12-31" min="2022-09-01">
 			<canvas id="deviceEnergyUsage"></canvas>
+		</div>
+		<div class="center">
+			{% for key, values in location_energy_pie.items%}		
+				<div class="chartBox" style="display: table-cell; height:40vh; width:40vw">
+					<canvas id="location_energy_pie_{{key}}" ></canvas>
+				</div>
+			
+			{% endfor %}
 		</div>
 	</div>
 </div>

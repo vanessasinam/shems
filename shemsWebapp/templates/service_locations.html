@@ -14,16 +14,28 @@
 			body {
 				margin: 0;
 				padding: 0;
-				background-color: #b7d7e2;
+				background-color: #d0bbc9;
 			}
 			.container {
 				margin: 0 auto;
 				width: 60%;
 			}
+			.logout {
+				margin: 10px;
+				background-color: #6a8389;
+				border-radius: 10px;
+				box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+				cursor: pointer;
+				width: 70px;
+				text-align: center;
+				/* float: right; */
+			}
+			.logout a {
+				text-decoration: none;
+				font-family: Verdana;
+			}
 			h2 {
 				font-size: 36px;
-				margin: 10px;
-				padding: 10px;
 				text-align: center;
 				color:  #053c4f;
 				font-family: Verdana;
@@ -36,13 +48,22 @@
 				text-align: center;
 				color: #353a3b;
 			}
+			.location-box {
+				display: flex;
+      			flex-wrap: wrap;
+				padding: 20px;
+			}
 			.location {
-				margin: 0 auto;
-				padding-left: 30px;
+				/* flex: 1 0 30%; */
+				padding-left: 20px;
 				padding-top: 10px;
 				padding-bottom: 10px;
+				margin: 0 auto;
 				box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-				width: 50%;
+				width: 400px;
+			}
+			.link-text {
+				color: #5d2b2b;
 			}
 			p {	
 				color: rgb(30, 28, 28);
@@ -70,33 +91,40 @@
 		</style>
 	</head>
 <body>
-<div class="container py-5">
-	<h2>Service locations</h2>
-    {% for location in customer_locations %}
-	<div class="location">
-		<form method="POST">
-			{% csrf_token %}
-			<input
-				type="hidden"
-				id="lid"
-				name="lid"
-                value="{{ location.lid }}"
-			/>
-			<span class="y">
-				<button name="delete_location" class="delete_location" value="delete_location">
-				X
-				</button>
-			</span>
-		</form>
-		<p> Location ID: {{location.lid}}</p>
-		<p> Bedrooms: {{location.num_bedrooms}}</p>
-		<p> Building: {{location.building}}</p>
-		<p> Street: {{location.street}}</p>
-		<p> Zipcode: {{location.zipcode}}</p>		
+<div class="container">
+	<div class="logout">
+		<a href="{% url 'shemsAccount:logout' %}" class="link-text">Logout</a>
 	</div>
-    {% endfor %}
-	<h4><a href="addLocation">Add more service locations</a></h4>
-	<h4><a href="{% url 'shemsWebapp:profile' %}">Back to profile</a></h4>
+	<h2>Service locations</h2>
+	<div class="location-box">
+		{% for location in customer_locations %}
+		<div class="location">
+			<form method="POST">
+				{% csrf_token %}
+				<input
+					type="hidden"
+					id="lid"
+					name="lid"
+					value="{{ location.lid }}"
+				/>
+				<span class="y">
+					<button name="delete_location" class="delete_location" value="delete_location">
+					X
+					</button>
+				</span>
+			</form>
+			<p> Location ID: {{location.lid}}</p>
+			<p> Bedrooms: {{location.num_bedrooms}}</p>
+			<p> Building: {{location.building}}</p>
+			<p> Street: {{location.street}}</p>
+			<p> Zipcode: {{location.zipcode}}</p>		
+		</div>
+		{% endfor %}
+	</div>
+	<div>
+		<h4><a href="addLocation" class="link-text">Add more service locations</a></h4>
+		<h4><a href="{% url 'shemsWebapp:profile' %}" class="link-text">Back to profile</a></h4>
+	</div>
 </div>
 </body>
 </html>

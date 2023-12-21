@@ -14,7 +14,7 @@
 		body {
 			margin: 0;
 			padding: 0;
-			background-color: #b7d7e2;
+			background-color: #d0bbc9;
 		}
 		.container {
 			margin: 0 auto;
@@ -35,18 +35,21 @@
 			text-decoration: none;
 			font-family: Verdana;
 		}
+		.link-text {
+			color: #5d2b2b;
+		}
 	</style>
 </head>
 {% block content %}
 <body>
-<div class="container py-5">
+<div class="container">
 	<h1>Device</h1>
 	<form method="POST" id="deviceForm" data-device-url="{% url 'shemsWebapp:ajax_load_device_types' %}" novalidate>
 		{% csrf_token %}
 		{{ form|crispy }}
 		<button class="btn btn-primary" type="submit">Add device</button>
 	</form>
-	<h4><a href="{% url 'shemsWebapp:profile' %}">Back to profile</a></h4>
+	<h4><a href="{% url 'shemsWebapp:profile' %} " class="link-text">Back to profile</a></h4>
 </div>
 </body>
 </html>
